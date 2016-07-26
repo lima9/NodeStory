@@ -7,14 +7,21 @@ var secretKey = config.secretKey;
 
 function createToken(user) {
 
-    var token = jsonwebtoken.sign({
+    return jsonwebtoken.sign({
         id: user._id,
         name: user.name,
         username: user.username
     }, secretKey);
-
-    return token;
 }
+/*
+ var token = jsonwebtoken.sign({
+ id: user._id,
+ name: user.name,
+ username: user.username
+ }, secretKey);
+
+ return token;
+ */
 
 
 module.exports = function (app, express) {
