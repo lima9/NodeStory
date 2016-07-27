@@ -24,9 +24,19 @@ function createToken(user) {
  */
 
 
-module.exports = function (app, express) {
+module.exports = function (app, express, io) {
 
     var api = express.Router();
+
+    api.get('/all_stories', function (req, res) {
+        Story.find({}, function (err, stories) {
+            if (err){
+                res.send(err);
+                return;
+            }
+            res.json(stories);
+        });
+    });
 
     api.post('/signup', function (req, res) {
 
@@ -40,12 +50,16 @@ module.exports = function (app, express) {
                 res.send(err);
                 return;
             }
-            res.json({message: 'User has been created!'});
+            var token = createToken(user);
+            res.json({
+                success: true,
+                message: 'User has been created!',
+                token: token
+            });
         });
     });
 
     api.get('/users', function (req, res) {
-
         User.find({}, function (err, users) {
             if (err) {
                 res.send(err);
@@ -59,7 +73,7 @@ module.exports = function (app, express) {
 
         User.findOne({
             username: req.body.username
-        }).select('password').exec(function (err, user) {
+        }).select('name username password').exec(function (err, user) {
             if (err) throw err;
             if (!user) {
                 res.send({message: "User doesn't exist"});
@@ -112,11 +126,12 @@ module.exports = function (app, express) {
                 creator: req.decoded.id,
                 content: req.body.content
             });
-            story.save(function (err) {
+            story.save(function (err, newStory) {
                 if (err) {
                     res.send(err);
                     return;
                 }
+                io.emit('story', newStory);
                 res.json({message: "New Story created!"});
             });
         })
@@ -129,10 +144,8 @@ module.exports = function (app, express) {
                 res.json(stories);
             })
         });
-
-    api.get('/me', function (res, req) {
+    api.get('/me', function (req, res) {
         res.json(req.decoded);
     });
-    
     return api;
 };
